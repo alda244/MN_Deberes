@@ -95,78 +95,6 @@ def eliminacion_gaussiana(A: np.ndarray) -> np.ndarray:
     return solucion
 
 
-
-
-# ####################################################################
-def eliminacion_gaussianaAritmeticaDos(A: np.ndarray) -> np.ndarray:
-    """Resuelve un sistema de ecuaciones lineales mediante el método de eliminación gaussiana.
-
-    ## Parameters
-
-    ``A``: matriz aumentada del sistema de ecuaciones lineales. Debe ser de tamaño n-by-(n+1), donde n es el número de incógnitas.
-
-    ## Return
-
-    ``solucion``: vector con la solución del sistema de ecuaciones lineales.
-
-    """
-    if not isinstance(A, np.ndarray):
-        logging.debug("Convirtiendo A a numpy array.")
-        A = np.array(A)
-    assert A.shape[0] == A.shape[1] - 1, "La matriz A debe ser de tamaño n-by-(n+1)."
-    n = A.shape[0]
-
-    for i in range(0, n - 1):  # loop por columna
-
-        # --- encontrar pivote
-        p = None  # default, first element
-        for pi in range(i, n):
-            if A[pi, i] == 0:
-                # must be nonzero
-                continue
-
-            if p is None:
-                # first nonzero element
-                p = pi
-                continue
-
-            if abs(A[pi, i]) < abs(A[p, i]):
-                p = pi
-
-        if p is None:
-            # no pivot found.
-            raise ValueError("No existe solución única.")
-
-        if p != i:
-            # swap rows
-            logging.debug(f"Intercambiando filas {i} y {p}")
-            _aux = A[i, :].copy()
-            A[i, :] = A[p, :].copy()
-            A[p, :] = _aux
-
-        # --- Eliminación: loop por fila
-        for j in range(i + 1, n):
-            m = np.round(A[j, i] / A[i, i], 2)
-            A[j, i:] = np.round(A[j, i:] - m * A[i, i:], 2)
-
-        logging.info(f"\n{A}")
-
-    if A[n - 1, n - 1] == 0:
-        raise ValueError("No existe solución única.")
-
-        print(f"\n{A}")
-    # --- Sustitución hacia atrás
-    solucion = np.zeros(n)
-    solucion[n - 1] = np.round(A[n - 1, n] / A[n - 1, n - 1], 2)
-
-    for i in range(n - 2, -1, -1):
-        suma = 0
-        for j in range(i + 1, n):
-            suma += A[i, j] * solucion[j]
-        solucion[i] = np.round((A[i, n] - suma) / A[i, i], 2)
-
-    return solucion
-
 # ####################################################################
 def descomposicion_LU(A: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Realiza la descomposición LU de una matriz cuadrada A.
@@ -195,9 +123,16 @@ def descomposicion_LU(A: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     for i in range(0, n):  # loop por columna
 
         # --- deterimnar pivote
-        if A[i, i] == 0:
+        max_row = i + np.argmax(np.abs(A[i:, i]))
+        if A[max_row, i] == 0:
             raise ValueError("No existe solución única.")
 
+        # Intercambiar filas en A y L
+        if max_row != i:
+            A[[i, max_row]] = A[[max_row, i]]
+            if i > 0:
+                L[[i, max_row], :i] = L[[max_row, i], :i]
+    
         # --- Eliminación: loop por fila
         L[i, i] = 1
         for j in range(i + 1, n):
@@ -281,7 +216,7 @@ def matriz_aumentada(A: np.ndarray, b: np.ndarray) -> np.ndarray:
 
     ## Return
 
-    ``Ab``: matriz aumentada.
+    ``a``:
 
     """
     if not isinstance(A, np.ndarray):
